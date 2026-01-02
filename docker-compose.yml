@@ -1,0 +1,13 @@
+services:
+  app:
+    image: azuledoido-imagem
+    environment:
+      - BANCO_HOST=db
+  db:
+    image: redis:alpine
+    volumes:
+      - dados_do_redis:/data
+
+volumes:
+  dados_do_redis:
+
