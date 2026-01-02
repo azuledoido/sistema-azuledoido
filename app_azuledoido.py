@@ -1,16 +1,22 @@
 import redis
-import time
 import os
+from flask import Flask
 
-# Forçamos o uso da variável de ambiente que configuramos no Render
+app = Flask(__name__)
+
+# Configura a conexão com o banco de dados Redis usando a variável de ambiente
 endereco_banco = os.environ.get('BANCO_HOST')
+banco = redis.Redis(host=endereco_banco, port=6379, decode_responses=True)
 
-try:
-    banco = redis.Redis(host=endereco_banco, port=6379, decode_responses=True)
-    print("--- SISTEMA AZULEDOIDO 2026 ---")
-    visitas = banco.incr('contador')
-    print(f"Sucesso! Acesso número: {visitas}")
-except Exception as e:
-    print(f"Erro: {e}")
+@app.route('/')
+def hello():
+    try:
+        visitas = banco.incr('contador')
+        return f"--- SISTEMA AZULEDOIDO 2026 ---<br>Sucesso! Acesso numero: {visitas}"
+    except Exception as e:
+        return f"Erro ao conectar ao banco de dados: {e}"
 
-time.sleep(3600)
+# Roda o servidor web na porta que o Render exige
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
