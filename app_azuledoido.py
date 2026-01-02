@@ -2,6 +2,7 @@ import redis
 import os
 from flask import Flask
 import logging
+from datetime import datetime # 1. Adicionado para gerenciar o horário
 
 # Configurações de log para o Render
 logging.basicConfig(level=logging.INFO)
@@ -21,11 +22,21 @@ except Exception as e:
 def hello():
     try:
         visitas = banco.incr('contador')
+        
+        # 2. Lógica para salvar e buscar o horário do acesso anterior
+        agora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        # Pega o que está no topo da lista antes de adicionar o novo
+        anterior = banco.lindex('historico_visitas', 0) or "Primeiro acesso!"
+        # Adiciona o acesso atual para a próxima pessoa ver
+        banco.lpush('historico_visitas', agora)
+        banco.ltrim('historico_visitas', 0, 4) # Mantém apenas os últimos 5
+        
     except Exception as e:
         app.logger.error(f"Erro ao conectar ao Redis: {e}")
         visitas = "Indisponível (Erro no Banco)"
+        anterior = "Indisponível"
 
-    # Seu portfólio completo com o NOVO VISUAL AZUL TECH
+    # Seu portfólio completo com o NOVO VISUAL AZUL TECH (Mantido idêntico)
     return f"""
     <!DOCTYPE html>
     <html lang="pt-br">
@@ -98,20 +109,10 @@ def hello():
             <div class="metrics">
                 <h3>Acessos ao Portfólio</h3>
                 <span class="contador">{visitas}</span>
-                <p><small>Dados processados em tempo real pelo Redis</small></p>
+                <p>Acesso anterior: <strong>{anterior}</strong></p> <p><small>Dados processados em tempo real pelo Redis</small></p>
             </div>
 
             <p>Contato profissional: <strong>azuledoido@gmail.com</strong></p>
             
             <div class="footer">
-                SISTEMA AZULEDOIDO &copy; 2026 - Desenvolvido em Zorin OS 18
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-
-if __name__ == "__main__":
-    # O Render define a porta automaticamente na variável PORT
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+                SISTEMA AZULEDOIDO &copy; 2026 - Desenvolvido em Z
