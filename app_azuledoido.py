@@ -1,15 +1,16 @@
 import redis
 import time
+import os
 
-# O host 'db' é o nome do container do banco que o Docker Compose cria
+# Forçamos o uso da variável de ambiente que configuramos no Render
+endereco_banco = os.environ.get('BANCO_HOST')
+
 try:
-    banco = redis.Redis(host='db', port=6379, decode_responses=True)
+    banco = redis.Redis(host=endereco_banco, port=6379, decode_responses=True)
     print("--- SISTEMA AZULEDOIDO 2026 ---")
     visitas = banco.incr('contador')
-    print(f"Sucesso! Este sistema já foi acessado {visitas} vezes!")
+    print(f"Sucesso! Acesso número: {visitas}")
 except Exception as e:
-    print(f"Erro ao conectar: {e}")
+    print(f"Erro: {e}")
 
-# Mantém o container vivo para você conseguir ver o resultado
 time.sleep(3600)
-
