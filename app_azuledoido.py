@@ -2,11 +2,13 @@ import redis
 import os
 from flask import Flask
 import logging
-from datetime import datetime  # <--- NOVA IMPORTAÇÃO
+from datetime import datetime
 
+# Configurações de log para o Render
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
+# CONFIGURAÇÃO DO REDIS
 redis_url = os.environ.get('REDIS_URL', 'redis://db:6379')
 
 try:
@@ -17,21 +19,20 @@ except Exception as e:
 @app.route('/')
 def hello():
     try:
-        # Soma a visita
+        # Lógica do Contador e do Log de Tempo
         visitas = banco.incr('contador')
         
-        # --- NOVO: GUARDA O HORÁRIO DA ÚLTIMA VISITA ---
         horario_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         banco.lpush('historico_visitas', horario_atual) 
-        banco.ltrim('historico_visitas', 0, 4) # Guarda apenas as últimas 5 visitas
-        # ----------------------------------------------
+        banco.ltrim('historico_visitas', 0, 4)
         
-        ultima_visita = banco.lindex('historico_visitas', 1) or "Primeira visita!"
+        # Pega o horário da visita anterior
+        anterior = banco.lindex('historico_visitas', 1) or "Primeiro acesso!"
         
     except Exception as e:
         app.logger.error(f"Erro ao conectar ao Redis: {e}")
         visitas = "Indisponível"
-        ultima_visita = "Erro no Log"
+        anterior = "Erro no Banco"
 
     return f"""
     <!DOCTYPE html>
@@ -41,43 +42,37 @@ def hello():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Portfólio Técnico - Azuledoido</title>
         <style>
-            :root {{ --azul-deep: #003366; --azul-tech: #007bff; }}
+            :root {{
+                --azul-deep: #003366;
+                --azul-tech: #007bff;
+            }}
             body {{ 
-                font-family: 'Segoe UI', sans-serif; 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
                 background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); 
-                display: flex; align-items: center; justify-content: center; 
-                min-height: 100vh; margin: 0; 
+                color: #333;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
             }}
             .container {{ 
-                max-width: 600px; width: 90%; background: white; 
-                padding: 40px; border-radius: 20px; text-align: center;
-                box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-top: 8px solid var(--azul-tech);
+                max-width: 600px; 
+                width: 90%;
+                background: white; 
+                padding: 40px; 
+                border-radius: 20px; 
+                box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+                border-top: 8px solid var(--azul-tech);
+                text-align: center;
             }}
-            .metrics {{ background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; }}
-            .contador {{ font-size: 2.5em; font-weight: bold; color: var(--azul-deep); }}
-            .log {{ font-size: 0.85em; color: #666; margin-top: 10px; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Olá, eu sou Azuledoido!</h1>
-            <p>Este é o meu portfólio técnico. Tudo aqui roda em <strong>Docker, Flask e Redis</strong>.</p>
-            
-            <div class="metrics">
-                <h3>Acessos ao Portfólio</h3>
-                <span class="contador">{visitas}</span>
-                <p class="log">Acesso anterior: <strong>{ultima_visita}</strong></p>
-            </div>
-
-            <p>Contato: <strong>azuledoido@gmail.com</strong></p>
-            <div style="font-size: 0.8em; color: #888; margin-top: 20px;">
-                SISTEMA AZULEDOIDO &copy; 2026
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+            .status-badge {{
+                display: inline-block;
+                background: #d4edda;
+                color: #155724;
+                padding: 5px 15px;
+                border-radius: 50px;
+                font-size: 0.8em;
+                font-weight: bold;
+                margin-bottom: 20px;
+            }}
