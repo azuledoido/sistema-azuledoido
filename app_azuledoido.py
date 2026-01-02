@@ -1,6 +1,6 @@
 import redis
 import os
-from flask import Flask, render_template # Adicionamos render_template
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
@@ -12,7 +12,8 @@ banco = redis.Redis(host=endereco_banco, port=6379, decode_responses=True)
 def hello():
     try:
         visitas = banco.incr('contador')
-        # Agora ele renderiza o arquivo index.html, passando o número de visitas
+        # Adiciona depuração para ver onde ele está procurando
+        print(f"DEBUG: Procurando template em: {app.root_path}/templates")
         return render_template('index.html', visitas=visitas)
     except Exception as e:
         return f"Erro ao conectar ao banco de dados: {e}"
@@ -21,4 +22,3 @@ def hello():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
-
