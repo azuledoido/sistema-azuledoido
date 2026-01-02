@@ -1,7 +1,10 @@
 import redis
 import os
 from flask import Flask, render_template
+import logging
 
+# Configurações de log para o Render
+logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 # Configura a conexão com o banco de dados Redis
@@ -12,11 +15,16 @@ banco = redis.Redis(host=endereco_banco, port=6379, decode_responses=True)
 def hello():
     try:
         visitas = banco.incr('contador')
-        # Adiciona depuração para ver onde ele está procurando
-        print(f"DEBUG: Procurando template em: {app.root_path}/templates")
+    except Exception as e:
+        app.logger.error(f"Erro ao conectar ou incrementar o banco de dados: {e}")
+        return f"Erro ao conectar ou incrementar o banco de dados: {e}"
+
+    try:
+        # Tenta renderizar o template e nos diz o erro exato se não conseguir
         return render_template('index.html', visitas=visitas)
     except Exception as e:
-        return f"Erro ao conectar ao banco de dados: {e}"
+        app.logger.error(f"Erro ao renderizar template: {e}")
+        return f"Erro ao renderizar template: {e}"
 
 # Roda o servidor web na porta que o Render exige
 if __name__ == "__main__":
